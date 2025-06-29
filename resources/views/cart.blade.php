@@ -24,7 +24,7 @@
                                     <div class="row align-items-center">
                                         <div class="col-md-2">
                                             @if($item->product->image)
-                                                <img src="{{ asset('storage/' . $item->product->image) }}" 
+                                                <img src="{{ asset('images/' . $item->product->image) }}" 
                                                      class="img-fluid rounded" alt="{{ $item->product->name }}"
                                                      style="height: 80px; width: 80px; object-fit: cover;">
                                             @else
