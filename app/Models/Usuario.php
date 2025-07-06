@@ -2,19 +2,35 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class Usuario extends Authenticatable
 {
-    use Notifiable;
+     use HasFactory, Notifiable;
 
-    protected $table = 'usuarios';
-    protected $primaryKey = 'id_usuario';
-    protected $fillable = ['name', 'email', 'password', 'id_rol'];
-    protected $hidden = ['password', 'remember_token'];
+    protected $table = 'usuarios'; // Especifica el nombre de tu tabla
 
-    public function rol() {
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'id_rol',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
+
+    public function rol()
+    {
         return $this->belongsTo(Rol::class, 'id_rol');
     }
 

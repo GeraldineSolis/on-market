@@ -13,12 +13,7 @@ Route::get('/catalogo', [HomeController::class, 'catalog'])->name('catalog');
 Route::get('/producto/{product}', [HomeController::class, 'show'])->name('product.show');
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login.form');
 Route::post('/login', [AuthController::class, 'login'])->name('login');
-Route::post('/logout', function () {
-    Auth::logout();
-    request()->session()->invalidate();
-    request()->session()->regenerateToken();
-    return redirect()->route('login')->with('success', 'Sesión cerrada exitosamente.');
-})->name('logout');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register.form');
 Route::post('/register', [AuthController::class, 'register'])->name('register');
@@ -34,6 +29,12 @@ Route::get('/checkout', [CartController::class, 'checkout'])->name('checkout');
 Route::post('/procesar-orden', [CartController::class, 'processOrder'])->name('order.process');
 Route::get('/orden-exitosa/{order}', [CartController::class, 'orderSuccess'])->name('order.success');
 
+Route::middleware(['auth'])->group(function () {
+    Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/admin/products/create', [AdminController::class, 'createProduct'])->name('admin.products.create');
+    Route::get('/admin/orders', [AdminController::class, 'orders'])->name('admin.orders');
+    // ... otras rutas admin
+});
 // Rutas de administración
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');

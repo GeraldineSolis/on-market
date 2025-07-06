@@ -69,10 +69,17 @@ class AuthController extends Controller
         return back()->withErrors(['email' => 'Credenciales incorrectas'])->withInput();
     }
 
-    public function logout()
+    public function logout(Request $request)
     {
         Auth::logout();
-        return redirect()->route('login.form');
+        
+        // Invalidar la sesión
+        $request->session()->invalidate();
+        
+        // Regenerar el token CSRF
+        $request->session()->regenerateToken();
+        
+        return redirect()->route('login.form')->with('success', 'Sesión cerrada exitosamente.');
     }
 
 }
