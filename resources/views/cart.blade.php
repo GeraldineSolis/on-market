@@ -2,6 +2,17 @@
 
 @section('title', 'Carrito de Compras - On Market')
 
+@push('styles')
+<style>
+input.no-spinners::-webkit-outer-spin-button,
+input.no-spinners::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+</style>
+@endpush
+
+
 @section('content')
 <div class="container py-5">
     <div class="row">
@@ -45,7 +56,7 @@
                                                 @method('PATCH')
                                                 <div class="input-group">
                                                     <button type="button" class="btn btn-outline-secondary btn-sm" onclick="changeQuantity(this, -1)">-</button>
-                                                    <input type="number" name="quantity" class="form-control text-center" 
+                                                    <input type="number" name="quantity" class="form-control text-center no-spinners" 
                                                            value="{{ $item->quantity }}" min="1" max="{{ $item->product->stock }}"
                                                            onchange="this.form.submit()">
                                                     <button type="button" class="btn btn-outline-secondary btn-sm" onclick="changeQuantity(this, 1)">+</button>
@@ -155,4 +166,4 @@ document.querySelectorAll('.quantity-form input[name="quantity"]').forEach(input
 });
 </script>
 @endpush
-@endsections
+@endsection

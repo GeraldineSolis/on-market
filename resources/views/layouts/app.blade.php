@@ -81,6 +81,11 @@
             position: relative;
             display: inline-block;
         }
+
+        .dropdown:hover .dropdown-menu {
+            display: block;
+            margin-top: 0; /* elimina salto al mostrar */
+        }
     </style>
     @stack('styles')
 </head>
@@ -119,7 +124,15 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ route('admin.dashboard') }}">Admin</a>
+                        <div class="dropdown">
+                            <span class="nav-link dropdown-toggle">
+                                <i class="fa-solid fa-user"></i>
+                            </span>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ route('login') }}">Iniciar sesion</a></li> 
+                                <li><a class="dropdown-item" href="{{ route('register') }}">Registrar</a></li> 
+                            </ul>
+                        </div>
                     </li>
                 </ul>
             </div>

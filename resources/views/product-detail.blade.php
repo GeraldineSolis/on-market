@@ -61,7 +61,7 @@
                                        value="1" min="1" max="{{ $product->stock }}" required>
                             </div>
                             <div class="col-md-8">
-                                <button type="submit" class="btn btn-purple btn-lg w-100">
+                                <button type="submit" class="btn btn-purple btn-lg w-100 add-to-cart-btn">
                                     <i class="fas fa-cart-plus"></i> Agregar al Carrito
                                 </button>
                             </div>
@@ -133,18 +133,34 @@
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const form = document.querySelector('.add-to-cart-form');
-    const quantityInput = document.getElementById('quantity');
-    
-    form.addEventListener('submit', function(e) {
-        const quantity = parseInt(quantityInput.value);
-        const maxStock = parseInt(quantityInput.getAttribute('max'));
-        
-        if (quantity > maxStock) {
-            e.preventDefault();
-            alert('La cantidad solicitada excede el stock disponible.');
+document.addEventListener('DOMContentLoaded', function () {
+    const forms = document.querySelectorAll('.add-to-cart-form');
+
+    forms.forEach(form => {
+        const btn = form.querySelector('.add-to-cart-btn');
+        const quantityInput = form.querySelector('input[name="quantity"]');
+        const productId = form.getAttribute('action').split('/').pop(); 
+
+        if (localStorage.getItem('addedToCart_' + productId)) {
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> Agregado al carrito';
+            btn.disabled = true;
         }
+
+        form.addEventListener('submit', function (e) {
+            const quantity = parseInt(quantityInput.value);
+            const maxStock = parseInt(quantityInput.getAttribute('max'));
+
+            if (quantity > maxStock) {
+                e.preventDefault();
+                alert('La cantidad solicitada excede el stock disponible.');
+                return;
+            }
+
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> Agregado al carrito';
+            btn.disabled = true;
+
+            localStorage.setItem('addedToCart_' + productId, true);
+        });
     });
 });
 </script>

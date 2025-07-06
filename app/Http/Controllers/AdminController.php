@@ -11,10 +11,17 @@ class AdminController extends Controller
 {
     public function dashboard()
     {
+        $products = Product::latest()->paginate(12);
+        return view('admin.dashboard', compact('products'));
+    }
+
+    public function dashboardasd()
+    {
         $totalProducts = Product::count();
         $totalOrders = Order::count();
         $totalRevenue = Order::sum('total');
         $recentOrders = Order::latest()->limit(5)->get();
+        $products = Product::latest()->limit(4)->get();
 
         return view('admin.dashboard', compact('totalProducts', 'totalOrders', 'totalRevenue', 'recentOrders'));
     }
@@ -22,7 +29,8 @@ class AdminController extends Controller
     public function products()
     {
         $products = Product::latest()->paginate(15);
-        return view('admin.products.index', compact('products'));
+        $totalProducts = Product::count();
+        return view('admin.dashboard', compact('products'));
     }
 
     public function createProduct()
@@ -45,13 +53,15 @@ class AdminController extends Controller
         $data = $request->all();
         
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('products', 'public');
-            $data['image'] = $imagePath;
+            $filename = time() . '_' . $request->file('image')->getClientOriginalName();
+            $request->file('image')->move(public_path('images'), $filename);
+            $data['image'] = $filename;
         }
+
 
         Product::create($data);
 
-        return redirect()->route('admin.products')->with('success', 'Producto creado exitosamente');
+        return redirect()->route('admin.dashboard')->with('success', 'Producto creado exitosamente');
     }
 
     public function editProduct(Product $product)
@@ -74,14 +84,14 @@ class AdminController extends Controller
         $data = $request->all();
         
         if ($request->hasFile('image')) {
-            // Eliminar imagen anterior
-            if ($product->image) {
-                Storage::disk('public')->delete($product->image);
+            if ($product->image && file_exists(public_path('images/' . $product->image))) {
+                unlink(public_path('images/' . $product->image));
             }
-            
-            $imagePath = $request->file('image')->store('products', 'public');
-            $data['image'] = $imagePath;
+            $filename = time() . '_' . $request->file('image')->getClientOriginalName();
+            $request->file('image')->move(public_path('images'), $filename);
+            $data['image'] = $filename; 
         }
+
 
         $product->update($data);
 
