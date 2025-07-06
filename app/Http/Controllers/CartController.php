@@ -7,20 +7,38 @@ use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 
 class CartController extends Controller
 {
     private function getSessionId()
     {
-        if (!Session::has('cart_session_id')) {
-            Session::put('cart_session_id', uniqid());
+        if (!Auth::check()) {
+            return 'guest_' . session()->getId();
         }
-        return Session::get('cart_session_id');
+
+        // Crear un session_id único para cada usuario autenticado
+        $userSessionKey = 'cart_session_user_' . Auth::user()->id;
+        
+        if (!Session::has($userSessionKey)) {
+            Session::put($userSessionKey, 'user_' . Auth::user()->id . '_' . uniqid());
+        }
+        
+        return Session::get($userSessionKey);
     }
 
     public function index()
     {
+        // Si el usuario no está autenticado, mostrar vista sin carrito
+        if (!Auth::check()) {
+            return view('cart', [
+                'cartItems' => collect([]),
+                'total' => 0
+            ]);
+        }
+
+        // Usuario autenticado: mostrar su carrito específico
         $cartItems = CartItem::where('session_id', $this->getSessionId())
             ->with('product')
             ->get();
@@ -32,12 +50,18 @@ class CartController extends Controller
 
     public function add(Request $request, Product $product)
     {
+        // Verificar autenticación PRIMERO
+        if (!Auth::check()) {
+            return redirect()->route('login.form')
+                ->with('error', 'Debes iniciar sesión para agregar productos al carrito.');
+        }
+
         $request->validate([
             'quantity' => 'required|integer|min:1|max:' . $product->stock
         ]);
 
         $sessionId = $this->getSessionId();
-        
+
         $cartItem = CartItem::where('session_id', $sessionId)
             ->where('product_id', $product->id)
             ->first();
@@ -56,11 +80,19 @@ class CartController extends Controller
             ]);
         }
 
-        return back()->with('success', 'Producto agregado al carrito');
+        return back()->with('success', 'Producto agregado al carrito')
+                    ->with('product_added', $product->id)
+                    ->with('user_id', Auth::user()->id);
     }
 
     public function update(Request $request, CartItem $cartItem)
     {
+        // Verificar autenticación
+        if (!Auth::check()) {
+            return redirect()->route('login.form')
+                ->with('error', 'Debes iniciar sesión para modificar el carrito.');
+        }
+
         $request->validate([
             'quantity' => 'required|integer|min:1|max:' . $cartItem->product->stock
         ]);
@@ -76,17 +108,53 @@ class CartController extends Controller
 
     public function remove(CartItem $cartItem)
     {
+        // Verificar autenticación
+        if (!Auth::check()) {
+            return redirect()->route('login.form')
+                ->with('error', 'Debes iniciar sesión para modificar el carrito.');
+        }
+
         if ($cartItem->session_id !== $this->getSessionId()) {
             abort(403);
         }
 
+        $productId = $cartItem->product_id;
         $cartItem->delete();
 
-        return back()->with('success', 'Producto eliminado del carrito');
+        return back()->with('success', 'Producto eliminado del carrito')
+                    ->with('product_removed', $productId)
+                    ->with('user_id', Auth::user()->id);
+    }
+
+    public function checkProduct($productId)
+    {
+        if (!Auth::check()) {
+            return response()->json(['inCart' => false]);
+        }
+
+        $sessionId = $this->getSessionId();
+        $cartItem = CartItem::where('session_id', $sessionId)
+            ->where('product_id', $productId)
+            ->first();
+
+        if ($cartItem) {
+            return response()->json([
+                'inCart' => true,
+                'quantity' => $cartItem->quantity
+            ]);
+        }
+
+        return response()->json(['inCart' => false]);
     }
 
     public function checkout()
     {
+        // Verificar autenticación
+        if (!Auth::check()) {
+            return redirect()->route('login.form')
+                ->with('error', 'Debes iniciar sesión para proceder al checkout.');
+        }
+
         $cartItems = CartItem::where('session_id', $this->getSessionId())
             ->with('product')
             ->get();
@@ -102,6 +170,12 @@ class CartController extends Controller
 
     public function processOrder(Request $request)
     {
+        // Verificar autenticación
+        if (!Auth::check()) {
+            return redirect()->route('login.form')
+                ->with('error', 'Debes iniciar sesión para realizar un pedido.');
+        }
+
         $request->validate([
             'customer_name' => 'required|string|max:255',
             'customer_email' => 'required|email|max:255',
@@ -124,7 +198,8 @@ class CartController extends Controller
             'customer_email' => $request->customer_email,
             'customer_phone' => $request->customer_phone,
             'customer_address' => $request->customer_address,
-            'total' => $total
+            'total' => $total,
+            'user_id' => Auth::user()->id // Asociar la orden al usuario
         ]);
 
         foreach ($cartItems as $cartItem) {
@@ -139,9 +214,8 @@ class CartController extends Controller
             $cartItem->product->decrement('stock', $cartItem->quantity);
         }
 
-        // Limpiar carrito
+        // Limpiar carrito del usuario específico
         CartItem::where('session_id', $this->getSessionId())->delete();
-        Session::forget('cart_session_id');
 
         return redirect()->route('order.success', $order)->with('success', 'Pedido realizado exitosamente');
     }

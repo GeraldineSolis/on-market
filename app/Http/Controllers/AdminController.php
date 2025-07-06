@@ -15,17 +15,6 @@ class AdminController extends Controller
         return view('admin.dashboard', compact('products'));
     }
 
-    public function dashboardasd()
-    {
-        $totalProducts = Product::count();
-        $totalOrders = Order::count();
-        $totalRevenue = Order::sum('total');
-        $recentOrders = Order::latest()->limit(5)->get();
-        $products = Product::latest()->limit(4)->get();
-
-        return view('admin.dashboard', compact('totalProducts', 'totalOrders', 'totalRevenue', 'recentOrders'));
-    }
-
     public function products()
     {
         $products = Product::latest()->paginate(15);

@@ -84,7 +84,14 @@
 
         .dropdown:hover .dropdown-menu {
             display: block;
-            margin-top: 0; /* elimina salto al mostrar */
+            margin-top: 0;
+        }
+
+        .user-name {
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
     </style>
     @stack('styles')
@@ -115,23 +122,73 @@
                     <li class="nav-item">
                         <a class="nav-link cart-icon" href="{{ route('cart') }}">
                             <i class="fas fa-shopping-cart"></i>
-                            @php
-                                $cartCount = \App\Models\CartItem::where('session_id', session('cart_session_id', 'temp'))->sum('quantity');
-                            @endphp
-                            @if($cartCount > 0)
-                                <span class="badge-cart">{{ $cartCount }}</span>
+                            @if(Auth::check())
+                                @php
+                                    // Obtener el session_id específico del usuario
+                                    $userSessionKey = 'cart_session_user_' . Auth::user()->id;
+                                    $userSessionId = session($userSessionKey, 'user_' . Auth::user()->id . '_default');
+                                    $cartCount = \App\Models\CartItem::where('session_id', $userSessionId)->sum('quantity');
+                                @endphp
+                                @if($cartCount > 0)
+                                    <span class="badge-cart">{{ $cartCount }}</span>
+                                @endif
                             @endif
                         </a>
                     </li>
+                    
+                    <!-- Dropdown de usuario -->
                     <li class="nav-item">
                         <div class="dropdown">
-                            <span class="nav-link dropdown-toggle">
-                                <i class="fa-solid fa-user"></i>
-                            </span>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ route('login') }}">Iniciar sesion</a></li> 
-                                <li><a class="dropdown-item" href="{{ route('register') }}">Registrar</a></li> 
-                            </ul>
+                            @auth
+                                <!-- Usuario autenticado -->
+                                <span class="nav-link dropdown-toggle d-flex align-items-center" style="cursor: pointer;">
+                                    <i class="fa-solid fa-user me-2"></i>
+                                    <span class="user-name">{{ Auth::user()->name }}</span>
+                                </span>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li class="dropdown-item-text">
+                                        <strong>{{ Auth::user()->name }}</strong><br>
+                                        <small class="text-muted">{{ Auth::user()->email }}</small>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="#">
+                                            <i class="fas fa-user me-2"></i> Mi Perfil
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="#">
+                                            <i class="fas fa-box me-2"></i> Mis Pedidos
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form method="POST" action="{{ route('logout') }}" class="d-inline w-100">
+                                            @csrf
+                                            <button type="submit" class="dropdown-item text-danger">
+                                                <i class="fas fa-sign-out-alt me-2"></i> Cerrar sesión
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            @else
+                                <!-- Usuario no autenticado -->
+                                <span class="nav-link dropdown-toggle" style="cursor: pointer;">
+                                    <i class="fa-solid fa-user"></i>
+                                </span>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('login.form') }}">
+                                            <i class="fas fa-sign-in-alt me-2"></i> Iniciar sesión
+                                        </a>
+                                    </li> 
+                                    <li>
+                                        <a class="dropdown-item" href="{{ route('register.form') }}">
+                                            <i class="fas fa-user-plus me-2"></i> Registrar
+                                        </a>
+                                    </li> 
+                                </ul>
+                            @endauth
                         </div>
                     </li>
                 </ul>
